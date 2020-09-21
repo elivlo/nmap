@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/xml"
 	"fmt"
+	"io/ioutil"
 	"os/exec"
 	"strings"
 	"time"
@@ -24,6 +25,7 @@ type Scanner struct {
 	args       []string
 	binaryPath string
 	ctx        context.Context
+	filename   string
 
 	portFilter func(Port) bool
 	hostFilter func(Host) bool
@@ -133,6 +135,11 @@ func (s *Scanner) Run() (result *Run, warnings []string, err error) {
 		}
 		if s.hostFilter != nil {
 			result = chooseHosts(result, s.hostFilter)
+		}
+
+		// Writes standard output to XML file
+		if s.filename != "" {
+			err = ioutil.WriteFile(s.filename, stdout.Bytes(), 0644)
 		}
 
 		// Return result, optional warnings but no error
@@ -1462,5 +1469,12 @@ func WithPrivileged() func(*Scanner) {
 func WithUnprivileged() func(*Scanner) {
 	return func(s *Scanner) {
 		s.args = append(s.args, "--unprivileged")
+	}
+}
+
+// WithWriteToFile writes the standard output to given filename
+func WithWriteToFile(file string) func(*Scanner) {
+	return func(s *Scanner) {
+		s.filename = file
 	}
 }
